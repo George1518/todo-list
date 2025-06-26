@@ -1,52 +1,107 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btn");
-  const list = document.getElementById("list");
-  const input = document.getElementById("input-box");
-  const alert = document.getElementById("alert");
+const btn = document.getElementById("btn");
+const list = document.getElementById("list");
+const input = document.getElementById("input-box");
+const alert = document.getElementById("alert");
+const clearCompleted = document.getElementById("clear-completed");
+clearCompleted.classList.add('none')
 
-  let taskList = JSON.parse(localStorage.getItem("taskList")) || [];
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-  const ul = document.createElement("ul");
-  ul.setAttribute("id", "uList");
-  list.appendChild(ul);
+const ul = document.createElement("ul");
+ul.setAttribute("id", "uList");
+list.appendChild(ul);
 
-  taskList.forEach(task => addTaskToUI(task));
+// Show tasks on load
+tasks.forEach(taskObj => addTaskToUI(taskObj));
 
-  btn.addEventListener("click", () => {
-    let task = input.value.trim();
-    if (!task) {
-      alert.innerText = "ENTER A TASK";
-    } else {
-      alert.innerText = "";
-      addTaskToUI(task);
-      taskList.push(task);
-      localStorage.setItem("taskList", JSON.stringify(taskList));
-      input.value = "";
-    }
-  });
+// Handle Add button click
+btn.addEventListener("click", () => {
+let taskText = input.value.trim();
+if (!taskText) {
+alert.innerText = "ENTER A TASK";
+} else {
+alert.innerText = "";
+const newTask = {
+text: taskText,
+checked: false,
+createdAt: new Date().toLocaleString()
+};
+tasks.push(newTask);
+localStorage.setItem("tasks", JSON.stringify(tasks));
+addTaskToUI(newTask);
+input.value = "";
+}
+});
 
-  function addTaskToUI(task) {
-    const li = document.createElement("li");
-    const del = document.createElement("button");
+// Add Task to UI
+function addTaskToUI(taskObj) {
+const li = document.createElement("li");
+const del = document.createElement("button");
+const div = document.createElement("div");
+const check = document.createElement("input");
 
-    li.classList.add("list-items");
-    li.innerText = task;
+check.setAttribute('type', 'checkbox');
+check.classList.add('check');
+check.checked = taskObj.checked;
 
-    del.setAttribute("id", "del-btn");
-    del.className = "delete-btn";
-    del.textContent = "❌";
+li.classList.add("list-items");
+li.innerText = taskObj.text;
 
-    li.appendChild(del);
-    ul.appendChild(li);
-    list.classList.add("class-list");
+if (taskObj.checked) {
+li.style.opacity = "0.6";
 
-    del.addEventListener("click", () => {
-      ul.removeChild(li);
-      taskList = taskList.filter(t => t !== task); 
-      localStorage.setItem("taskList", JSON.stringify(taskList));
-      if (ul.childElementCount === 0) {
-        list.classList.remove("class-list");
-      }
-    });
-  }
+}
+
+del.setAttribute("id", "del-btn");
+del.className = "delete-btn";
+del.textContent = "❌";
+
+li.appendChild(div);
+div.appendChild(del);
+div.appendChild(check);
+ul.appendChild(li);
+div.classList.add('opts');
+list.classList.add("class-list");
+clearCompleted.classList.remove('none')
+clearCompleted.classList.add("clear-completed");
+
+
+// Update when checkbox toggled
+check.addEventListener('change', () => {
+taskObj.checked = check.checked;
+if (check.checked) {
+li.style.opacity = "0.6";
+} else {
+li.style.textDecoration = "none";
+li.style.opacity = "1";
+}
+localStorage.setItem("tasks", JSON.stringify(tasks));
+});
+
+// Delete task
+del.addEventListener("click", () => {
+ul.removeChild(li);
+tasks = tasks.filter(t => t.text !== taskObj.text);
+localStorage.setItem("tasks", JSON.stringify(tasks));
+
+if (ul.childElementCount === 0) {
+list.classList.remove("class-list");
+}
+});
+}
+
+// Clear all completed tasks
+clearCompleted.addEventListener("click", () => {
+const remaining = tasks.filter(t => !t.checked);
+tasks = remaining;
+localStorage.setItem("tasks", JSON.stringify(remaining));
+ul.innerHTML = "";
+tasks.forEach(taskObj => addTaskToUI(taskObj));
+if (tasks.length === 0) {
+
+    list.classList.remove("class-list");
+    clearCompleted.classList.add('none');
+} ;
+});
 });
